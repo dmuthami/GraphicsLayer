@@ -5,8 +5,9 @@
     <!--The viewport meta tag is used to improve the presentation and behavior of the samples
       on iOS devices-->
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
-    <title>Create Map and add a dynamic layer</title>
-    <link rel="stylesheet" href="http://js.arcgis.com/3.10/js/esri/css/esri.css" />
+    <title>Graphics layer</title>
+    <link rel="stylesheet" href="http://js.arcgis.com/3.13/esri/css/esri.css">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
     <style>
         html, body, #mapDiv {
             padding: 0;
@@ -14,14 +15,16 @@
             height: 100%;
         }
     </style>
-    <script src="//js.arcgis.com/3.13compact/"></script>
+    <script src="http://js.arcgis.com/3.13/"></script>
 	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 	<script src="//code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
-    <script src="js\multipleParameterQuery.js">
-
-    </script>
+    <script type="text/javascript" src="js/multipleParameterQuery.js"></script>
 </head>
 <body>
     <div id="mapDiv"></div>
+	<div id="dialog" title="Basic dialog">
+		<input id = "btnClick" type="submit" value="A submit button">
+	  <p>This is the default dialog which is useful for displaying information. The dialog window can be moved, resized and closed with the 'x' icon.</p>
+	</div>
 </body>
 </html>

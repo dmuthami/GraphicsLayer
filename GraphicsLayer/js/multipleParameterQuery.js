@@ -60,30 +60,42 @@ require([
     });
 
     //Add dynamic layer
-    app.map.addLayer(layer);
-
-    /*
-     *On map load function
-     * ---Used map load function for prof of concept---
-     */
-    app.map.on("load", function () {
+    app.map.addLayers([layer]);
+	
+    app.map.on("layers-add-result", function () {
 
         /*
          * Function that displays on the map Erven passed as an argument
          *  Argument is an array object named erven
          */
-        searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON);
+        //searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON);
     });
+	//-------------JQUERY Code--------------
+
+	$(document).ready(function() {
+	   jQueryFunct();
+	 });
+	 
+	 function jQueryFunct(){
+		 //window.alert( "It is Un Real");
+		 console.log( "The performance of JQuery is UnReal");
+		 $( "#dialog").dialog();
+		 
+		 //Wire click event to the button
+		 $("#btnClick").click(function (){ 
+			//alert("The button was clicked.");
+			searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON);
+		 });
+	 }
+	 
+	//-------------End of JQuery Code---------
 	function createErvenArray(jsonObject){
-		//Convert json string to javascript object
-		//var javascriptObject = JSON.parse(String(jsonObject));
-		var javascriptObject = jsonObject;
-		//loop though the javascript object to create the standno array 
-		for (var standno in javascriptObject) {
-		   if (javascriptObject.hasOwnProperty(standno) ){
-			   console.log( "key:"+standno+", val:"+javascriptObject[standno] );
-		   }
-		}
+		var arr = [];
+		var obj = jsonObject;
+			$.each(obj, function(i, val) {
+			   console.log("StandNo:" + obj[i].standno);
+			   arr.push( obj[i].standno);
+			});
 		return arr;
 	}
     function searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON) {
@@ -136,9 +148,15 @@ require([
          */
 		 
 		 // Erven array
-		 //var myArr = createErvenArray(ervenJSON);
-		 
-		 
+		 //
+		 var myArr =[]
+		 try {
+				myArr = createErvenArray(ervenJSON);
+			}
+			catch(err) {
+				console.log(err.message); 
+			}
+		 //erven= myArr;
         if (erven.length > 0) {
             var myWhere = local_Authority_Prefix + "_erf_no in ('" + erven.join("','") + "')";
             //console.log(myWhere);
