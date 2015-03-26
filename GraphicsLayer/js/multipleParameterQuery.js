@@ -149,14 +149,14 @@ require([
 		 
 		 // Erven array
 		 //
-		 var myArr =[]
+		 var myArr
 		 try {
 				myArr = createErvenArray(ervenJSON);
 			}
 			catch(err) {
 				console.log(err.message); 
 			}
-		 //erven= myArr;
+		 //erven = myArr;
         if (erven.length > 0) {
             var myWhere = local_Authority_Prefix + "_erf_no in ('" + erven.join("','") + "')";
             //console.log(myWhere);
