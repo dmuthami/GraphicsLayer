@@ -198,9 +198,6 @@ require([
                     new Color([0, 0, 0, 1.5]), 1)
                 , new Color([255, 0, 0, 1.0])
                 );
-				
-            //console.log(featureSet.features.length);
-
 			
             //QueryTask returns a featureSet.  Loop through features in the featureSet and add them to the map.
             dojo.forEach(featureSet.features, function (feature) {
@@ -214,22 +211,36 @@ require([
 				 *
 				 */
 				 var myStandNo = graphic.attributes['oj_stand_no'];
+				 var myCustomerName = "";
+				 var myAccountNumber = 	"";	
 				 //Get balance from array
 				 function getBal(myStandNo,ervenJSON){
-					 //query json and return balance for supplied standno	 	
+					//query json and return balance for supplied standno	 	
 					var bal= "";
 					var obj = ervenJSON;
 						$.each(obj, function(i, val) {
 						   if (String(obj[i].standno)==myStandNo.toString()) {
 							  //get the value for balance
 							  bal =  String(obj[i].balance_due);
-							  console.log("StandNo:" + obj[i].standno + "Balance: "+bal); //send to console man
+							  //get the value for customer name
+							  myCustomerName = String(obj[i].customer_name)
+							  //get the value for Account Number
+							  myAccountNumber = String(obj[i].account_number)
+							  //logger to test everything
+							  console.log("StandNo:" + obj[i].standno + " Balance: "+bal+ " Account Number: "+myCustomerName + " Names: "+myCustomerName); //send to console man
 						   }					   
 						});
 						return bal;
 				 }
 				 //console.log(graphic.attributes['oj_stand_no'])
 				 var myBalance = getBal(myStandNo,ervenJSON)
+				 /**/	 
+				 //Update info template with details
+				 var infoTemplateFinanceData = "</b>-----Finance Data------<br/>"
+									+ "<b>Customer Name: </b>" + myCustomerName +"<br/>"
+									+ "<b>Account Number: </b>" + myAccountNumber +"<br/>"
+									+ "<b>Balance: </b>" + myBalance+"<br/>"
+				
 				 if ($.isNumeric( myBalance)  ){
 					 var bal = parseFloat(myBalance);
 					 if (bal > 0){
@@ -242,7 +253,8 @@ require([
 				 }
                 //graphic.setSymbol(defaultersSymbol);
                 //Set infotemplate for graphic layer only
-				infoTemplate.setContent(infoTemplateStr);
+				var infoTemplateString = infoTemplateStr + infoTemplateFinanceData;
+				infoTemplate.setContent(infoTemplateString);
                 graphic.setInfoTemplate(infoTemplate);
                 //add graphic to the map
                 app.map.graphics.add(graphic);
