@@ -151,9 +151,9 @@ require([
         query.outSpatialReference = { "wkid": 102100 };//web mercator auxiliary sphere
         //Pop-up template for the graphics added onto the map upon successful query execution
         var infoTemplate = new InfoTemplate();//instantiate  pop-up object
-        //Set-up pop-up tital
+        //Set-up pop-up totals
 		
-        infoTemplate.setTitle("${" + local_Authority_Prefix + "_erf_no}");
+        infoTemplate.setTitle( local_Authority_Prefix + " Stand No: " + "${_stand_no}");
 		
         //set-up content to be displayed on the pop-up
 		var infoTemplateStr = "<b>Township: </b>${" + local_Authority_Prefix + "_township_id}<br/>"
@@ -223,13 +223,28 @@ require([
 						   if (String(obj[i].standno)==myStandNo.toString()) {
 							  //get the value for balance
 							  bal =  String(obj[i].balance_due);
+							  //get the value for customer name
+							  //myCustomerName = String(obj[i].customer_name)
+							  //get the value for Account Number
+							  //myAccountNumber = String(obj[i].account_number)
+							  //logger to test everything
 							  console.log("StandNo:" + obj[i].standno + "Balance: "+bal); //send to console man
 						   }					   
 						});
 						return bal;
 				 }
 				 //console.log(graphic.attributes['oj_stand_no'])
-				 var myBalance = getBal(myStandNo,ervenJSON)
+				 var myBalance = getBal(myStandNo,ervenJSON);
+				 /*
+				 var myCustomerName = "";
+				 var myAccountNumber = 	"";			 
+				 //Update info template with details
+				 infoTemplateStr += "</b>-----Finance Data------<br/>"
+									+ "<b>Customer Name: </b>" + myCustomerName +"<br/>"
+									+ "<b>Account Number: </b>" + myAccountNumber +"<br/>"
+									+ "<b>Balance: </b>" + myBalance+"<br/>"
+				*/
+				 
 				 if ($.isNumeric( myBalance)  ){
 					 var bal = parseFloat(myBalance);
 					 if (bal > 0){
@@ -240,6 +255,13 @@ require([
 				 } else{ //balance is non-numeric. Therefore we retain a pessimistic point of view
 					 graphic.setSymbol(defaultersSymbol);
 				 }
+				 
+				 function appendFinanceData(){
+					 //Customer name : customer_name
+					 //Balance : balance_due
+					 //Account Number: account_number
+				 }
+				 
                 //graphic.setSymbol(defaultersSymbol);
                 //Set infotemplate for graphic layer only
 				infoTemplate.setContent(infoTemplateStr);
