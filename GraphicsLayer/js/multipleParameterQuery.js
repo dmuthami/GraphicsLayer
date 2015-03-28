@@ -1,6 +1,6 @@
 ﻿//Global variable object store
 var app = {}; 
-//Othe varibales in the global variable store
+//Other variables in the global variable store
 app.map = null, app.toolbar = null, app.tool = null; app.symbols = null, app.printer = null;
 
 require([
@@ -14,8 +14,8 @@ require([
   "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol", "esri/Color",
   "esri/InfoTemplate"
 ], function (
-  Map, ArcGISDynamicMapServiceLayer, ImageParameters
-  , Query, QueryTask,
+  Map, ArcGISDynamicMapServiceLayer, ImageParameters,
+  Query, QueryTask,
   FeatureSet, Graphic,
   SimpleFillSymbol, SimpleLineSymbol, Color,
   InfoTemplate
@@ -53,42 +53,61 @@ require([
         sliderOrientation: "horizontal" //Orientation of zoom slider
     });
 
-    //create  parcel fabric object
+    //instantiate parcel fabric layer object
     var layer = new ArcGISDynamicMapServiceLayer(url, {
         id: "Otjiwarongo",
         opacity: 0.5
     });
 
-    //Add dynamic layer
+    //Add dynamic layer to the map
     app.map.addLayers([layer]);
 	
+	/*
+	 * Wire "layers-add-result" event to the map 
+	 * Fires only after all layers have loaded onto the map
+	 */
     app.map.on("layers-add-result", function () {
 
-        /*
-         * Function that displays on the map Erven passed as an argument
-         *  Argument is an array object named erven
-         */
-        //searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON);
+	/*
+	 * Write some code here after all layers have loaded
+	 */
     });
-	//-------------JQUERY Code--------------
 
+
+	/*
+	 * Function to execute when DOM is fully loaded
+	 * The function is named jQueryFunct()
+	 * NB. Currently, their is no way to force JQUERY to execute functions after dojo libraries
+	 */
 	$(document).ready(function() {
 	   jQueryFunct();
 	 });
 	 
+	/*
+	 * jQueryFunct()
+	 * Function: 
+	 *			Loads the a Jquery dialog
+	 *			Executes function to conduct a multiple Query Search
+	 */	 
 	 function jQueryFunct(){
-		 //window.alert( "It is Un Real");
-		 console.log( "The performance of JQuery is UnReal");
+		 //Show dialog box
 		 $( "#dialog").dialog();
 		 
-		 //Wire click event to the button
+		 //Wire click event to the button that user fires search
 		 $("#btnClick").click(function (){ 
-			//alert("The button was clicked.");
+			/*
+			 * Execute the function searchMultipleErf
+			 * Arguments: 
+			 * 			erven: Array containing the stand numbers of the Erven we need to search
+			 *			local_Authority_Prefix: Attributes fields in the feature class are prefixed using the local authority prefix
+			 *									e.g oj_stand_no for stand number field in Otjiwarongo, ts_stand_no for stand number field in Tsumeb, 
+			 *			searchURL: url of the layer that the search will be applied on
+			 *			searchURL: an associative array with the stand no, balances and other financial data to be displayed on the map
+			 */
 			searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON);
 		 });
 	 }
 	 
-	//-------------End of JQuery Code---------
 	function createErvenArray(jsonObject){
 		var arr = [];
 		var obj = jsonObject;
@@ -98,6 +117,68 @@ require([
 			});
 		return arr;
 	}
+
+	//Wire click event to graphics layer to modify infotemplate content Sir/Madam
+	dojo.connect(app.map.graphics, "onClick", function(evt) {
+		  var graphicAttributes = evt.graphic.attributes;
+		  var title = graphicAttributes.NAME;
+		  var populationDensity = graphicAttributes.POP2007 / graphicAttributes.SQMI;
+		  var content = "The population density in 2007 is <i>" + populationDensity.toFixed(2); + "</i>.";
+		  map.infoWindow.setTitle(title);
+		  map.infoWindow.setContent(content);
+		  map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
+		});
+		
+	 function getBal(myStandNo,ervenJSON){
+		//query json and return balance for supplied standno	 	
+			var bal= "";
+			var obj = ervenJSON;
+				$.each(obj, function(i, val) {
+				   if (String(obj[i].standno)==myStandNo.toString()) {
+					  //get the value for balance
+					  bal =  String(obj[i].balance_due);
+					  //get the value for customer name
+					  myCustomerName = String(obj[i].customer_name)
+					  //get the value for Account Number
+					  myAccountNumber = String(obj[i].account_number)
+					  //logger to test everything
+					  console.log("StandNo:" + obj[i].standno + " Balance: "+bal+ " Account Number: "+myCustomerName + " Names: "+myCustomerName); //send to console man
+				   }					   
+				});
+				return bal;
+	}
+	
+	var _customerName, _accountNumber, _bal
+	function getFinancialData(myStandNo,ervenJSON){
+	//query json and return balance for supplied standno	 	
+	var obj = ervenJSON;
+		$.each(obj, function(i, val) {
+		   if (String(obj[i].standno)==myStandNo.toString()) {
+			  //get the value for balance
+			  _bal =  String(obj[i].balance_due);
+			  //get the value for customer name
+			  _customerName = String(obj[i].customer_name)
+			  //get the value for Account Number
+			  _accountNumber = String(obj[i].account_number)
+		   }					   
+		});
+	}
+	
+	//Function builds financial data for inclusion in system
+	function buildFinancialDataString(_customerName, _accountNumber, _bal){
+		/**/	 
+		//Update info template with details
+		var infoTemplateFinanceData = "</b>-----Finance Data------<br/>"
+				+ "<b>Customer Name: </b>" + _customerName +"<br/>"
+				+ "<b>Account Number: </b>" + _accountNumber +"<br/>"
+				+ "<b>Balance: </b>" + _bal+"<br/>"	
+				
+		return infoTemplateFinanceData;
+	}
+
+	//Variable stores status if a custom click event has been wired to graphics layer
+	var wireGraphicsLayer = 0;
+	var infoTemplate;
     function searchMultipleErf(erven, local_Authority_Prefix, searchURL,ervenJSON) {
         //build query task
         var queryTask = new QueryTask(searchURL);
@@ -150,7 +231,7 @@ require([
         //Spatial Reference
         query.outSpatialReference = { "wkid": 102100 };//web mercator auxiliary sphere
         //Pop-up template for the graphics added onto the map upon successful query execution
-        var infoTemplate = new InfoTemplate();//instantiate  pop-up object
+        infoTemplate = new InfoTemplate();//instantiate  pop-up object
         //Set-up pop-up tital
 		
         infoTemplate.setTitle("${" + local_Authority_Prefix + "_erf_no}");
@@ -172,7 +253,7 @@ require([
 
         //Can listen for onComplete event to process results or can use the callback option in the queryTask.execute method.
         dojo.connect(queryTask, "onComplete", function (featureSet) {
-            //Clear any existing graphic ayers on the map
+            //Clear any existing graphic Layers on the map
             app.map.graphics.clear();
 			
             /*
@@ -214,33 +295,9 @@ require([
 				 var myCustomerName = "";
 				 var myAccountNumber = 	"";	
 				 //Get balance from array
-				 function getBal(myStandNo,ervenJSON){
-					//query json and return balance for supplied standno	 	
-					var bal= "";
-					var obj = ervenJSON;
-						$.each(obj, function(i, val) {
-						   if (String(obj[i].standno)==myStandNo.toString()) {
-							  //get the value for balance
-							  bal =  String(obj[i].balance_due);
-							  //get the value for customer name
-							  myCustomerName = String(obj[i].customer_name)
-							  //get the value for Account Number
-							  myAccountNumber = String(obj[i].account_number)
-							  //logger to test everything
-							  console.log("StandNo:" + obj[i].standno + " Balance: "+bal+ " Account Number: "+myCustomerName + " Names: "+myCustomerName); //send to console man
-						   }					   
-						});
-						return bal;
-				 }
+
 				 //console.log(graphic.attributes['oj_stand_no'])
-				 var myBalance = getBal(myStandNo,ervenJSON)
-				 /**/	 
-				 //Update info template with details
-				 var infoTemplateFinanceData = "</b>-----Finance Data------<br/>"
-									+ "<b>Customer Name: </b>" + myCustomerName +"<br/>"
-									+ "<b>Account Number: </b>" + myAccountNumber +"<br/>"
-									+ "<b>Balance: </b>" + myBalance+"<br/>"
-				
+				 var myBalance = getBal(myStandNo,ervenJSON)				
 				 if ($.isNumeric( myBalance)  ){
 					 var bal = parseFloat(myBalance);
 					 if (bal > 0){
@@ -251,16 +308,47 @@ require([
 				 } else{ //balance is non-numeric. Therefore we retain a pessimistic point of view
 					 graphic.setSymbol(defaultersSymbol);
 				 }
-                //graphic.setSymbol(defaultersSymbol);
-                //Set infotemplate for graphic layer only
-				var infoTemplateString = infoTemplateStr + infoTemplateFinanceData;
-				infoTemplate.setContent(infoTemplateString);
-                graphic.setInfoTemplate(infoTemplate);
+
                 //add graphic to the map
                 app.map.graphics.add(graphic);
+				
+				//Check if graphics layer array is not null
+				if ( wireGraphicsLayer==0){
+					//Count to check if the object has keys				
+						var count = 0
+						$.each(app.map.graphics, function(i, val) {
+							count = count +1;
+						});
+						//Check if graphics layer has graphic objects\s
+						if (count>0){
+							//Wire that event here
+							app.map.graphics.on("click", function (evt) {
+								console.log("Awesome Stuff");
+																
+								//Get standno
+								var standNo = evt.graphic.attributes.oj_stand_no;
+								console.log(evt.graphic.attributes.oj_stand_no);
+								
+								//Call function to create string with financial data for capturing into the map
+								getFinancialData(standNo,ervenJSON)
+								
+								//Prepare popup data by calling function to build financial data content
+								var financialDataContent = buildFinancialDataString(_customerName, _accountNumber, _bal)
+
+								//Set info template for graphic layer only
+								var infoTemplateString = infoTemplateStr + financialDataContent;
+								infoTemplate.setContent(infoTemplateString);
+								
+								//app.map.infoWindow.show(evt.screenPoint,app.map.getInfoWindowAnchor(evt.screenPoint));
+							});		
+							wireGraphicsLayer = 1;						
+						}
+				}
+				graphic.setInfoTemplate(infoTemplate);
+				//
             });
         });
-        //execute asynchronous query task by passing query parameter to ts execute method
+        //execute asynchronous query task by passing query parameter to its execute method
         queryTask.execute(query);
     }
 
