@@ -79,7 +79,7 @@ require([
 			 * Execute the function searchMultipleErf
 			 * Arguments: 
 			 * 			erven: Array containing the stand numbers of the Erven we need to search
-			 *			parametersProt.localAuthorityPrefix: Attributes fields in the feature class are prefixed using the local authority prefix
+			 *			parametersProt._localAuthorityPrefix: Attributes fields in the feature class are prefixed using the local authority prefix
 			 *									e.g oj_stand_no for stand number field in Otjiwarongo, ts_stand_no for stand number field in Tsumeb, 
 			 *			searchURL: url of the layer that the search will be applied on
 			 *			ervenJSON: an associative array with the stand no, balances and other financial data to be displayed on the map
@@ -125,7 +125,7 @@ require([
 	 * _accountNumber : Account Number
 	 * _bal : Balance
 	 */
-	var _customerName, _accountNumber, _bal
+
 	/*
 	 * Function:  getFinancialData
 	 * Argument : Stand Number of the customer for which we need to display 
@@ -134,38 +134,51 @@ require([
 	 *			query json and return balance, name, and account number for customer supplied 
 	 */
 	function getFinancialData(myStandNo,jsonObject){
-		//query json and return balance for supplied standno	 	
+		//query json and return balance for supplied standno	
+		var customerName, accountNumber, bal
 		var obj = jsonObject;
+		var infoTemplateFinanceData =  "";
 		$.each(obj, function(i, val) {
-		   if (String(obj[i].standno)==myStandNo.toString()) {
+		   if (String(obj[i].standno)== myStandNo.toString()) {
 			  //get the value for balance
-			  _bal =  String(obj[i].balance_due);
+			  bal =  String(obj[i].balance_due);
 			  //get the value for customer name
-			  _customerName = String(obj[i].customer_name)
+			  customerName = String(obj[i].customer_name)
 			  //get the value for Account Number
-			  _accountNumber = String(obj[i].account_number)
+			  accountNumber = String(obj[i].account_number)
+				//Build string for information
+				infoTemplateFinanceData = "</b>-----Finance Data------<br/>"
+				+ "<b>Customer Name: </b>" + customerName +"<br/>"
+				+ "<b>Account Number: </b>" + accountNumber +"<br/>"
+				+ "<b>Balance: </b>" + bal+"<br/>"	
 		   }					   
 		});
+		return infoTemplateFinanceData
 	}
+	function getFinancialDataContent2(myStandNo,fieldNamesToDisplayOnPopUp,jsonObject,fieldAliasToDisplayOnPopUp){
+		//query json and return balance for supplied standno	 	
+		//parametersProt._JSONstandNoKey
+		var json2 = jsonObject;
+		var financeDataString = "</b>-----Finance Data------<br/>";	
+		$.each(jsonObject, function(i, val) {
+		   if (String(jsonObject[i].standno)==myStandNo.toString()) {
+			   //Display information for required field
+			   //{ one:'standno', two:'balance_due', three:'customer_name',four:'account_number'};
+			   var obj = fieldNamesToDisplayOnPopUp;			   
+				jQuery.each(obj, function(j, val) {
+				   console.log(val);
+				   var myvalue = val.toString();
+				   var str = "";
+				   str += "<b>"+ String(json2[i].myvalue) + ": </b>" + String(json2[i].val) +"<br/>"
+				   financeDataString += str; 
+				});
+				console.log(financeDataString);		   
+		   }					   
+		});
+		//Return formatted String
+		return financeDataString;	
+	}	
 	
-	/*
-	 * Function : buildFinancialDataString
-	 * Argument : _customerName - Name of customer
-	 * Argument : _accountNumber - Account Number of Customer
-	 * Argument : _bal - Customer balance
-	 * Function: 
-	 *			Function builds financial data for inclusion in system
-	 */
-	function buildFinancialDataString(_customerName, _accountNumber, _bal){		 
-		//String variable that builds the financial content
-		var infoTemplateFinanceData = "</b>-----Finance Data------<br/>"
-				+ "<b>Customer Name: </b>" + _customerName +"<br/>"
-				+ "<b>Account Number: </b>" + _accountNumber +"<br/>"
-				+ "<b>Balance: </b>" + _bal+"<br/>"	
-				
-		return infoTemplateFinanceData; //returns the financial content formatted in a nice string
-	}
-
 	/*
 	 * Variables to store the financial data
 	 * wireGraphicsLayer: Variable stores status if a custom click event has been wired to graphics layer
@@ -174,12 +187,12 @@ require([
 	 */
 	var wireGraphicsLayer = 0;
 	var infoTemplate;
-	var prefix = parametersProt.localAuthorityPrefix;
+	var prefix = parametersProt._localAuthorityPrefix;
 	
 	/*
 	 * Function : searchMultipleErf
 	 * Argument : erven - The array containing stand numbers to display on the map
-	 * Argument : parametersProt.localAuthorityPrefix - The local authority prefix. say oj for Otjiwarongo
+	 * Argument : parametersProt._localAuthorityPrefix - The local authority prefix. say oj for Otjiwarongo
 	 * Argument : searchURL - The REST web map service URL of the layer to run the query on
 	 * Argument : ervenJSON - The JSON object containing the financial data
 	 * Function: 
@@ -192,23 +205,13 @@ require([
         var queryTask = new QueryTask(searchURL);
         //build query filter
         var query = new Query();
+		
         //Return geometries as part of the query results
         query.returnGeometry = true;
+		
         //Specify outfields from the layer id
-        query.outFields = [
-                            parametersProt.localAuthorityPrefix + "_local_authority_id",
-                            parametersProt.localAuthorityPrefix + "_stand_no",
-                            parametersProt.localAuthorityPrefix + "_township_id",
-                            parametersProt.localAuthorityPrefix + "_erf_no",
-                            parametersProt.localAuthorityPrefix + "_status",
-                            parametersProt.localAuthorityPrefix + "_survey_size",
-                            parametersProt.localAuthorityPrefix + "_zoning_id",
-                            parametersProt.localAuthorityPrefix + "_portion ",
-                            parametersProt.localAuthorityPrefix + "_density ",
-                            parametersProt.localAuthorityPrefix + "_ownership",
-                            parametersProt.localAuthorityPrefix + "_computed_size",
-                            parametersProt.localAuthorityPrefix + "_restriction"
-        ];
+        query.outFields = parametersProt._outFields;
+		
         //Build the where clause
         var myWhere = "";
 		 
@@ -221,7 +224,7 @@ require([
 			}
 		 
         if (erven.length > 0) {
-            myWhere = parametersProt.localAuthorityPrefix + "_stand_no in ('" + erven.join("','") + "')"; //Builds an in clause expression
+            myWhere = parametersProt._localAuthorityPrefix + "_stand_no in ('" + erven.join("','") + "')"; //Builds an in clause expression
         }
 
         query.where = myWhere;  //supply the Where clause expression to the query
@@ -232,17 +235,17 @@ require([
         //Pop-up template for the graphics added onto the map upon successful query execution
         infoTemplate = new InfoTemplate();//instantiate  pop-up object
         
-        infoTemplate.setTitle("Erf No:"+"${" + parametersProt.localAuthorityPrefix + "_erf_no}");//Set-up pop-up title with Stand Number
+        infoTemplate.setTitle("Erf No:"+"${" + parametersProt._localAuthorityPrefix + "_erf_no}");//Set-up pop-up title with Stand Number
 		
         //Prepare content to be displayed on the pop-up
-		var infoTemplateStr = "<b>Township: </b>${" + parametersProt.localAuthorityPrefix + "_township_id}<br/>"
-								+ "<b>Zoning: </b>${" + parametersProt.localAuthorityPrefix + "_zoning_id}<br/>"
-								+ "<b>Erf No: </b>${" + parametersProt.localAuthorityPrefix + "_erf_no}<br/>"
-								+ "<b>Status: </b>${" + parametersProt.localAuthorityPrefix + "_status}<br/>"
-								+ "<b>Survey Size: </b>${" + parametersProt.localAuthorityPrefix + "_survey_size}" + " Sq. M<br/>"
-								+ "<b>Density: </b>${" + parametersProt.localAuthorityPrefix + "_density}<br/>"
-								+ "<b>Ownership: </b>${" + parametersProt.localAuthorityPrefix + "_ownership}<br/>"
-								+ "<b>Restrictions: </b>${" + parametersProt.localAuthorityPrefix + "_restriction}<br/>"
+		var infoTemplateStr = "<b>Township: </b>${" + parametersProt._localAuthorityPrefix + "_township_id}<br/>"
+								+ "<b>Zoning: </b>${" + parametersProt._localAuthorityPrefix + "_zoning_id}<br/>"
+								+ "<b>Erf No: </b>${" + parametersProt._localAuthorityPrefix + "_erf_no}<br/>"
+								+ "<b>Status: </b>${" + parametersProt._localAuthorityPrefix + "_status}<br/>"
+								+ "<b>Survey Size: </b>${" + parametersProt._localAuthorityPrefix + "_survey_size}" + " Sq. M<br/>"
+								+ "<b>Density: </b>${" + parametersProt._localAuthorityPrefix + "_density}<br/>"
+								+ "<b>Ownership: </b>${" + parametersProt._localAuthorityPrefix + "_ownership}<br/>"
+								+ "<b>Restrictions: </b>${" + parametersProt._localAuthorityPrefix + "_restriction}<br/>"
         							                            
         app.map.infoWindow.resize(245, 225);        //Set-up info window width and height
 
@@ -288,14 +291,14 @@ require([
 			 * Function :
 			 *			Loops through each feature in the feature set and draws a graphic on the map 
 			 */
-            dojo.forEach(featureSet.features, function (feature) {
+            dojo.forEach(featureSet.features, function (feature) {	
                 var graphic = feature; //assign by ref the feature to variable named graphic
 
-				var myStandNo = graphic.attributes[parametersProt.localAuthorityPrefix+'_stand_no'];//From graphic object get value of stand number from the stand number field
+				var standNoVal = graphic.attributes[parametersProt._localAuthorityPrefix+'_stand_no'];//From graphic object get value of stand number from the stand number field
 				 /*
 				  * Call "getBal" function to return balance of the customer
 				  */
-				 var myBalance = getBal(myStandNo,ervenJSON) //call function				
+				 var myBalance = getBal(standNoVal,ervenJSON) //call function				
 				 if ($.isNumeric( myBalance)  ){ //Check if balance is a numeric field
 					 var bal = parseFloat(myBalance); //Convert balance to a number
 					 if (bal > 0){ //Check if balance is greater than zero
@@ -330,16 +333,16 @@ require([
 								 * Call "getFinancialData" by supplying standno and ervenJSON object
 								 * ervenJSON: JSON object with financial information that is required on the pop-up
 								 */
-								getFinancialData(standNo,ervenJSON)
+								var financialDataContent = getFinancialData(standNo,ervenJSON)
 								
-								//Prepare pop-up data by calling function to build financial data content
+								try {
+									//function receives standno value, standno field name and json object
+									getFinancialDataContent2(standNo,parametersProt._fieldNamesToDisplayOnPopUp,ervenJSON,parametersProt._fieldAliasToDisplayOnPopUp);
+								}
+								catch(err) {
+									console.log(err.message); //error message is written to the console
+								}
 								
-								/*
-								 * Call "buildFinancialDataString" by supplying customer name, account number and balance
-								 * returns a well formatted string with financial data for display
-								 */
-								var financialDataContent = buildFinancialDataString(_customerName, _accountNumber, _bal)
-
 								//Set info template for graphic layer only
 								var infoTemplateString = infoTemplateStr + financialDataContent;
 								infoTemplate.setContent(infoTemplateString); // now set the content of the infotemplate
